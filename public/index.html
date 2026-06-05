@@ -1,0 +1,217 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nexus - App Generator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    body {
+      background-color: #0f172a;
+      color: #e2e8f0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #60a5fa;
+      margin-bottom: 1rem;
+    }
+    .input-area {
+      margin-bottom: 1rem;
+    }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 1rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background-color: #1e293b;
+      color: #e2e8f0;
+      font-size: 1rem;
+      resize: vertical;
+    }
+    button {
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:hover {
+      background-color: #2563eb;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .output-area {
+      margin-top: 2rem;
+    }
+    pre {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.9rem;
+    }
+    .metrics {
+      margin-bottom: 1rem;
+      padding: 1rem;
+      background-color: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧩 Nexus - App Configuration Generator</h1>
+    <p>Enter an app idea below to generate complete configuration schemas!</p>
+
+    <div class="input-area">
+      <textarea id="promptInput" placeholder="Build a CRM with login, contacts, dashboard, role-based access, and premium plan with payments. Admins can see analytics."></textarea>
+      <br><br>
+
+      <button id="generateBtn" onclick="generate()">
+        Generate Configuration
+      </button>
+
+      <button id="validateBtn"
+              onclick="validateGeneratedApp()"
+              style="display:none;">
+        Validate Generated App
+      </button>
+    </div>
+
+    <div id="loading" style="display:none;">
+      Generating...
+    </div>
+
+    <div class="output-area" id="outputArea" style="display:none;">
+      <div class="metrics" id="metricsArea"></div>
+
+      <h3>Output:</h3>
+      <pre id="outputPre"></pre>
+
+      <br>
+
+      <h3 id="validationTitle" style="display:none;">
+        Execution Validation
+      </h3>
+
+      <pre id="validationPre" style="display:none;"></pre>
+    </div>
+  </div>
+
+  <script>
+    let lastGeneratedResult = null;
+
+    async function generate() {
+      const prompt = document.getElementById('promptInput').value;
+      const generateBtn = document.getElementById('generateBtn');
+      const loading = document.getElementById('loading');
+      const outputArea = document.getElementById('outputArea');
+      const outputPre = document.getElementById('outputPre');
+      const metricsArea = document.getElementById('metricsArea');
+
+      generateBtn.disabled = true;
+      loading.style.display = 'block';
+      outputArea.style.display = 'none';
+
+      try {
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt })
+        });
+
+        const data = await response.json();
+
+        lastGeneratedResult = data;
+
+        metricsArea.innerHTML = `
+          <strong>Metrics:</strong><br>
+          Success: ${data.success}<br>
+          Total Duration: ${data.metrics?.totalDuration || 0}ms<br>
+          Retries: ${data.metrics?.retries || 0}
+        `;
+
+        outputPre.textContent =
+          JSON.stringify(data, null, 2);
+
+        outputArea.style.display = 'block';
+
+        document.getElementById('validateBtn').style.display =
+          'inline-block';
+
+      } catch (error) {
+        alert('Error: ' + error.message);
+      } finally {
+        generateBtn.disabled = false;
+        loading.style.display = 'none';
+      }
+    }
+
+    function validateGeneratedApp() {
+
+      if (!lastGeneratedResult?.schemas) {
+        alert('Generate a configuration first.');
+        return;
+      }
+
+      const schemas = lastGeneratedResult.schemas;
+
+      const result = {
+        uiPages: schemas.ui?.pages?.length || 0,
+        apiEndpoints: schemas.api?.endpoints?.length || 0,
+        dbTables: schemas.db?.tables?.length || 0,
+        validationPassed: true,
+        executionReady: true,
+        issues: []
+      };
+
+      if (result.uiPages === 0) {
+        result.validationPassed = false;
+        result.executionReady = false;
+        result.issues.push('No UI pages generated');
+      }
+
+      if (result.apiEndpoints === 0) {
+        result.validationPassed = false;
+        result.executionReady = false;
+        result.issues.push('No API endpoints generated');
+      }
+
+      if (result.dbTables === 0) {
+        result.validationPassed = false;
+        result.executionReady = false;
+        result.issues.push('No DB tables generated');
+      }
+
+      document.getElementById('validationTitle').style.display =
+        'block';
+
+      document.getElementById('validationPre').style.display =
+        'block';
+
+      document.getElementById('validationPre').textContent =
+        JSON.stringify(result, null, 2);
+    }
+  </script>
+</body>
+</html>
