@@ -1,5 +1,7 @@
 # Nexus – AI App Configuration Generator
-
+Links
+Live Demo: https://nexus-ai-app-configuration-generator.onrender.com/
+GitHub Repository: https://github.com/Devya29/Nexus-AI-App-Configuration-Generator
 ## Overview
 
 Nexus is a compiler-inspired AI system that converts natural language application requirements into validated application configurations.
