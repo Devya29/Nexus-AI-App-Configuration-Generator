@@ -30,7 +30,7 @@ The system generates:
 ---
 
 ## Architecture
-![System Architecture](architecture-diagram.png)
+![System Architecture](nexus_architecture.png)
 ```text
 User Prompt
       │
